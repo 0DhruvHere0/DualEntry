@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+.env
+.vscode/
+.pytest_cache/
+.DS_Store
+*.log
+.coverage
+htmlcov/
+*.db
+.env.example
+LICENSE
+README.md
+app/main.py
