@@ -13,4 +13,4 @@ htmlcov/
 .env.example
 LICENSE
 README.md
-app/main.py
+__init__.py
