@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 from os import getenv
 from app.database.base import Base
 import app.models.account
+import app.models.user
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
