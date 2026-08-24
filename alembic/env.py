@@ -7,6 +7,7 @@ from logging.config import fileConfig
 import app.models.user
 import app.models.transaction
 import app.models.entry
+from app.models.counterpart import Counterpart
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 

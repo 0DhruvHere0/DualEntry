@@ -28,7 +28,7 @@ def create_account(account: AccountCreate,db: Session = Depends(get_db),) -> Acc
     new_account = Account(
         user_id=account.user_id,
         name=account.name,
-        category=account.category,
+        category=account.category.value,
     )
     db.add(new_account)
     db.commit()

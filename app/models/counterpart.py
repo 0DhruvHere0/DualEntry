@@ -1,30 +1,31 @@
 from datetime import datetime
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database.base import Base
-class Transaction(Base):
-    __tablename__ = "transactions"
+class Counterpart(Base):
+    __tablename__ = "counterparts"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "counterpart_id",
+            name="uq_user_counterpart"
+        ),
+    )
     id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
         autoincrement=True
     )
     user_id: Mapped[int] = mapped_column(
-        Integer,
         ForeignKey("users.id"),
         nullable=False
     )
     counterpart_id: Mapped[int] = mapped_column(
-        Integer,
         ForeignKey("users.id"),
         nullable=False
     )
-    transaction_type: Mapped[str] = mapped_column(
+    relationship_type: Mapped[str] = mapped_column(
         String(50),
-        nullable=False
-    )
-    description: Mapped[str] = mapped_column(
-        String(255),
         nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
@@ -35,14 +36,10 @@ class Transaction(Base):
     user = relationship(
         "User",
         foreign_keys=[user_id],
-        back_populates="transactions"
+        back_populates="counterparts"
     )
     counterpart = relationship(
         "User",
         foreign_keys=[counterpart_id],
-        back_populates="counterpart_transactions"
-    )
-    entries= relationship(
-        "Entry",
-        back_populates="transaction"
+        back_populates="counterpart_of"
     )
