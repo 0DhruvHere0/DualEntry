@@ -66,6 +66,7 @@ def create_transaction(
         )
     transaction = Transaction(
         user_id=transaction_data.user_id,
+        counterpart_id=transaction_data.counterpart_id,
         description=transaction_data.description
     )
     db.add(transaction)

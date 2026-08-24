@@ -11,6 +11,7 @@ class EntryCreate(BaseModel):
     amount: Decimal= Field(gt=0)
 class TransactionCreate(BaseModel):
     user_id: int
+    counterpart_id: int
     description: str
     entries: list[EntryCreate]
 class EntryResponse(BaseModel):

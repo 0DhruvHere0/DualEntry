@@ -14,6 +14,11 @@ class Transaction(Base):
         ForeignKey("users.id"),
         nullable=False
     )
+    counterpart_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("users.id"),
+        nullable=False
+    )
     description: Mapped[str] = mapped_column(
         String(255),
         nullable=False
@@ -25,7 +30,13 @@ class Transaction(Base):
     )
     user = relationship(
         "User",
+        foreign_keys=[user_id],
         back_populates="transactions"
+    )
+    counterpart = relationship(
+        "User",
+        foreign_keys=[counterpart_id],
+        back_populates="counterpart_transactions"
     )
     entries= relationship(
         "Entry",

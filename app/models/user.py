@@ -25,5 +25,11 @@ class User(Base):
     )
     transactions= relationship(
         "Transaction",
+        foreign_keys="Transaction.user_id",
         back_populates="user"
+    )
+    counterpart_transactions = relationship(
+        "Transaction",
+        foreign_keys="Transaction.counterpart_id",
+        back_populates="counterpart"
     )
