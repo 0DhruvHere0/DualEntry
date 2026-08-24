@@ -23,3 +23,7 @@ class User(Base):
         "Account",
         back_populates="user",
     )
+    transactions= relationship(
+        "Transaction",
+        back_populates="user"
+    )

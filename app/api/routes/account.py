@@ -20,6 +20,7 @@ def create_account(account: AccountCreate,db: Session = Depends(get_db),) -> Acc
             detail="An account with this name already exists.",
         )
     new_account = Account(
+        user_id=account.user_id,
         name=account.name,
         category=account.category,
     )

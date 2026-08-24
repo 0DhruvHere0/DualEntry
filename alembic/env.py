@@ -4,7 +4,9 @@ from app.database.base import Base
 import app.models.account
 import app.models.user
 from logging.config import fileConfig
-
+import app.models.user
+import app.models.transaction
+import app.models.entry
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 

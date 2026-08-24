@@ -35,4 +35,8 @@ class Account(Base):
         default=datetime.utcnow,
         nullable=False
     )
+    entries= relationship(
+        "Entry",
+        back_populates="account"
+    )
     user = relationship("User", back_populates="accounts")
