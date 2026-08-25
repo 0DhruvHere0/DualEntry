@@ -4,7 +4,15 @@ from sqlalchemy.orm import Session
 from app.database.dependency import get_db
 from app.models.account import Account
 from app.models.entry import Entry
-from app.schemas.account import AccountCreate, AccountResponse, AccountBalanceResponse, AccountEntryResponse
+from app.models.user import User
+from app.schemas.account import (
+    AccountCreate, 
+    AccountResponse, 
+    AccountBalanceResponse, 
+    AccountEntryResponse,
+    TrialBalanceAccountResponse,
+    TrialBalanceResponse
+)
 from app.models.transaction import Transaction
 router = APIRouter(
     prefix="/accounts",
@@ -105,3 +113,86 @@ def get_account_entries(
         .order_by(Transaction.created_at.desc())
     ).mappings().all()
     return entries
+@router.get(
+    "/user/{user_id}/trial-balance",
+    response_model=TrialBalanceResponse
+)
+def get_trial_balance(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    user = db.scalar(
+        select(User).where(User.id == user_id)
+    )
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+    rows = db.execute(
+        select(
+            Account.id.label("account_id"),
+            Account.name.label("account_name"),
+            Account.category.label("category"),
+            func.coalesce(
+                func.sum(
+                    case(
+                        (
+                            Entry.entry_type == "DEBIT",
+                            Entry.amount
+                        ),
+                        else_=0
+                    )
+                ),
+                0
+            ).label("debit"),
+            func.coalesce(
+                func.sum(
+                    case(
+                        (
+                            Entry.entry_type == "CREDIT",
+                            Entry.amount
+                        ),
+                        else_=0
+                    )
+                ),
+                0
+            ).label("credit"),
+        )
+        .outerjoin(
+            Entry,
+            Entry.account_id == Account.id
+        )
+        .where(
+            Account.user_id == user_id
+        )
+        .group_by(
+            Account.id,
+            Account.name,
+            Account.category
+        )
+        .order_by(Account.id)
+    ).all()
+    accounts = [
+        TrialBalanceAccountResponse(
+            account_id=row.account_id,
+            account_name=row.account_name,
+            category=row.category,
+            debit=row.debit,
+            credit=row.credit,
+        )
+        for row in rows
+    ]
+    total_debit = sum(
+        account.debit
+        for account in accounts
+    )
+    total_credit = sum(
+        account.credit
+        for account in accounts
+    )
+    return TrialBalanceResponse(
+        accounts=accounts,
+        total_debit=total_debit,
+        total_credit=total_credit,
+    )

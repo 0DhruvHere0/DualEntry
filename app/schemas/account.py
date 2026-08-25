@@ -31,3 +31,13 @@ class AccountEntryResponse(BaseModel):
     entry_type: str
     amount: Decimal
     created_at: datetime
+class TrialBalanceAccountResponse(BaseModel):
+    account_id: int
+    account_name: str
+    category: AccountCategory
+    debit: Decimal
+    credit: Decimal
+class TrialBalanceResponse(BaseModel):
+    accounts: list[TrialBalanceAccountResponse]
+    total_debit: Decimal
+    total_credit: Decimal
