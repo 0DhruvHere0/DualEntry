@@ -41,3 +41,19 @@ class TrialBalanceResponse(BaseModel):
     accounts: list[TrialBalanceAccountResponse]
     total_debit: Decimal
     total_credit: Decimal
+class AccountLedgerEntryResponse(BaseModel):
+    entry_id: int
+    transaction_id: int
+    description: str
+    transaction_type: str
+    entry_type: str
+    amount: Decimal
+    debit: Decimal
+    credit: Decimal
+    balance: Decimal
+    created_at: datetime
+class AccountLedgerResponse(BaseModel):
+    account_id: int
+    account_name: str
+    category: AccountCategory
+    entries: list[AccountLedgerEntryResponse]
