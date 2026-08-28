@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select, func, case
 from sqlalchemy.orm import Session
 from app.database.dependency import get_db
@@ -17,6 +18,9 @@ from app.schemas.report import (
     IncomeStatementResponse,
     BalanceSheetItem,
     BalanceSheetResponse,
+)
+from app.services.excel_export import (
+    create_financial_report_excel
 )
 router = APIRouter(
     prefix="/reports",
@@ -448,9 +452,13 @@ def get_balance_sheet(
     total_expenses = 0
     for row in income_rows:
         if row.category == "Income":
-            total_income += row.credit - row.debit
+            total_income += (
+                row.credit - row.debit
+            )
         elif row.category == "Expense":
-            total_expenses += row.debit - row.credit
+            total_expenses += (
+                row.debit - row.credit
+            )
     current_profit = (
         total_income - total_expenses
     )
@@ -473,5 +481,71 @@ def get_balance_sheet(
         total_assets=total_assets,
         total_liabilities=total_liabilities,
         total_equity=total_equity,
-        total_liabilities_and_equity=total_liabilities_and_equity,
+        total_liabilities_and_equity=(
+            total_liabilities_and_equity
+        ),
+    )
+@router.get(
+    "/export/{user_id}"
+)
+def export_financial_report(
+    user_id: int,
+    db: Session = Depends(get_db)
+):
+    user = db.scalar(
+        select(User).where(
+            User.id == user_id
+        )
+    )
+    if user is None:
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+    trial_balance = get_trial_balance(
+        user_id=user_id,
+        db=db
+    )
+    income_statement = get_income_statement(
+        user_id=user_id,
+        db=db
+    )
+    balance_sheet = get_balance_sheet(
+        user_id=user_id,
+        db=db
+    )
+    accounts = db.scalars(
+        select(Account)
+        .where(
+            Account.user_id == user_id
+        )
+        .order_by(
+            Account.id
+        )
+    ).all()
+    ledgers = []
+    for account in accounts:
+        ledger = get_account_ledger(
+            account_id=account.id,
+            db=db
+        )
+        ledgers.append(ledger)
+    excel_file = create_financial_report_excel(
+        trial_balance=trial_balance,
+        ledgers=ledgers,
+        income_statement=income_statement,
+        balance_sheet=balance_sheet,
+    )
+    return StreamingResponse(
+        excel_file,
+        media_type=(
+            "application/vnd.openxmlformats-officedocument."
+            "spreadsheetml.sheet"
+        ),
+        headers={
+            "Content-Disposition": (
+                f'attachment; filename="financial_report_'
+                f'{user_id}.xlsx"'
+            )
+        }
     )
