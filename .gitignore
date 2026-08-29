@@ -12,5 +12,4 @@ htmlcov/
 *.db
 .env.example
 LICENSE
-README.md
 __init__.py
