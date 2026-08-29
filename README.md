@@ -1,20 +1,5 @@
 # DualEntry
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python Version">
-  <img src="https://img.shields.io/badge/FastAPI-0.109+-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI">
-  <img src="https://img.shields.io/badge/PostgreSQL-15+-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL">
-  <img src="https://img.shields.io/badge/SQLAlchemy-2.0+-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white" alt="SQLAlchemy">
-  <img src="https://img.shields.io/badge/Alembic-1.13+-4C6EF5?style=for-the-badge&logo=alembic&logoColor=white" alt="Alembic">
-  <img src="https://img.shields.io/badge/Pydantic-2.5+-E92063?style=for-the-badge&logo=pydantic&logoColor=white" alt="Pydantic">
-  <img src="https://img.shields.io/badge/Docker-ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker">
-</p>
-
-<p align="center">
-  <strong>A robust backend REST API for double-entry bookkeeping and financial reporting</strong>
-</p>
-
----
 
 ## Overview
 
@@ -106,7 +91,6 @@ graph TB
 
 - **Python** 3.11+
 - **PostgreSQL** 15+
-- **Docker** (optional, for containerized deployment)
 
 ### Option 1: Local Development
 
@@ -137,24 +121,6 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 **API available at:** `http://localhost:8000`  
 **Interactive docs:** `http://localhost:8000/docs`  
 **ReDoc:** `http://localhost:8000/redoc`
-
-### Option 2: Docker Deployment
-
-```bash
-# Build and start all services
-docker-compose up -d --build
-
-# View logs
-docker-compose logs -f api
-
-# Run migrations
-docker-compose exec api alembic upgrade head
-
-# Stop services
-docker-compose down
-```
-
-**docker-compose.yml included** with PostgreSQL, API, and optional pgAdmin.
 
 ---
 
@@ -481,93 +447,6 @@ DualEntry/
 ├── tests/
 ├── .env.example
 ├── .gitignore
-├── docker-compose.yml
-├── Dockerfile
 ├── requirements.txt
 └── README.md
 ```
-
----
-
-## Roadmap
-
-### Phase 1: Core Stability ✅
-- [x] Double-entry transaction engine
-- [x] Account management & balance tracking
-- [x] Counterpart relationships
-- [x] Financial report generation
-- [x] Excel export
-- [x] Database migrations
-
-### Phase 2: Security & Access Control 🔄
-- [ ] JWT-based authentication
-- [ ] Role-based access control (Admin, Accountant, Viewer)
-- [ ] User-scoped data isolation
-- [ ] API rate limiting
-- [ ] Audit logging
-
-### Phase 3: Enhanced Reporting 📊
-- [ ] Date-range filtering for all reports
-- [ ] Comparative reports (YoY, QoQ, MoM)
-- [ ] Cash flow statement
-- [ ] Custom report builder
-- [ ] PDF export support
-- [ ] Scheduled report generation
-
-### Phase 4: Operational Excellence 🚀
-- [ ] Comprehensive test suite (unit, integration, e2e)
-- [ ] CI/CD pipeline (GitHub Actions)
-- [ ] Docker multi-stage builds
-- [ ] Kubernetes deployment manifests
-- [ ] Observability (Prometheus, Grafana, structured logging)
-- [ ] Database connection pooling optimization
-
-### Phase 5: Advanced Features ✨
-- [ ] Multi-currency support
-- [ ] Recurring transactions
-- [ ] Budget vs. actuals
-- [ ] Tax calculation engine
-- [ ] Bank reconciliation
-- [ ] Webhook notifications
-- [ ] API versioning strategy
-
----
-
-## Contributing
-
-```bash
-# 1. Fork the repository
-# 2. Create a feature branch
-git checkout -b feature/amazing-feature
-
-# 3. Make your changes with tests
-# 4. Run quality checks
-ruff check .
-ruff format .
-pytest
-
-# 5. Commit with conventional commits
-git commit -m "feat: add amazing feature"
-
-# 6. Push and open a Pull Request
-```
-
----
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## Support
-
-- **Documentation:** `/docs` endpoint when running locally
-- **Issues:** [GitHub Issues](https://github.com/yourusername/DualEntry/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/yourusername/DualEntry/discussions)
-
----
-
-<p align="center">
-  Made with ❤️ for accurate financial accounting
-</p>
