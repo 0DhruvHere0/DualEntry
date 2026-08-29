@@ -127,11 +127,6 @@ def create_transaction(
             status_code=400,
             detail="Total debits must equal total credits"
         )
-    if debit_total == 0:
-        raise HTTPException(
-            status_code=400,
-            detail="Transaction amount must be greater than zero"
-        )
     if transaction_data.transaction_type == TransactionType.SALE:
         for entry_data in transaction_data.entries:
             account = accounts[entry_data.account_id]
@@ -222,17 +217,21 @@ def create_transaction(
         transaction_type=transaction_data.transaction_type.value,
         description=transaction_data.description
     )
-    db.add(transaction)
-    db.flush()
-    for entry_data in transaction_data.entries:
-        entry = Entry(
-            transaction_id=transaction.id,
-            account_id=entry_data.account_id,
-            entry_type=entry_data.entry_type.value,
-            amount=entry_data.amount
-        )
-        db.add(entry)
-    db.commit()
+    try:
+        db.add(transaction)
+        db.flush()
+        for entry_data in transaction_data.entries:
+            entry = Entry(
+                transaction_id=transaction.id,
+                account_id=entry_data.account_id,
+                entry_type=entry_data.entry_type.value,
+                amount=entry_data.amount
+            )
+            db.add(entry)
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
     db.refresh(transaction)
     return transaction
 @router.get(

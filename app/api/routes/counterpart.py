@@ -70,7 +70,14 @@ def create_counterpart(
     db.add(new_counterpart)
     db.commit()
     db.refresh(new_counterpart)
-    return new_counterpart
+    return {
+        "id": new_counterpart.id,
+        "user_id": new_counterpart.user_id,
+        "counterpart_id": new_counterpart.counterpart_id,
+        "counterpart_name": counterpart.name,
+        "relationship_type": new_counterpart.relationship_type,
+        "created_at": new_counterpart.created_at,
+    }
 @router.get(
     "/user/{user_id}",
     response_model=list[CounterpartResponse],

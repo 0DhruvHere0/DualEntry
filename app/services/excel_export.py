@@ -25,7 +25,7 @@ def create_financial_report_excel(
         trial_sheet.append([
             account.account_id,
             account.account_name,
-            account.category,
+            account.category.value,
             account.debit,
             account.credit,
         ])
