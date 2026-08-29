@@ -221,21 +221,21 @@ flowchart TD
 ```mermaid
 graph LR
     subgraph "DEBIT Normal Balance"
-        ASSET[Asset<br/>💰]
-        EXPENSE[Expense<br/>💸]
+        ASSET["Asset<br/>"]
+        EXPENSE["Expense<br/>"]
     end
     
     subgraph "CREDIT Normal Balance"
-        LIABILITY[Liability<br/>📋]
-        EQUITY[Equity<br/>📊]
-        INCOME[Income<br/>💵]
+        LIABILITY["Liability<br/>"]
+        EQUITY["Equity<br/>"]
+        INCOME["Income<br/>"]
     end
     
-    style ASSET fill:#e8f5e9,stroke:#2e7d32
-    style EXPENSE fill:#e8f5e9,stroke:#2e7d32
-    style LIABILITY fill:#fff3e0,stroke:#ef6c00
-    style EQUITY fill:#fff3e0,stroke:#ef6c00
-    style INCOME fill:#fff3e0,stroke:#ef6c00
+    style ASSET fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px
+    style EXPENSE fill:#E8F5E9,stroke:#2E7D32,stroke-width:2px
+    style LIABILITY fill:#FFF3E0,stroke:#EF6C00,stroke-width:2px
+    style EQUITY fill:#FFF3E0,stroke:#EF6C00,stroke-width:2px
+    style INCOME fill:#FFF3E0,stroke:#EF6C00,stroke-width:2px
 ```
 
 | Category | Normal Balance | Increases With | Decreases With |
