@@ -24,38 +24,39 @@ DualEntry is a production-ready financial accounting API that implements **doubl
 ```mermaid
 graph TB
     subgraph "Client Layer"
-        CLIENT[API Client<br/>Swagger UI / Postman / cURL]
+        CLIENT["API Client<br/>Swagger UI / Postman / cURL"]
     end
 
     subgraph "API Layer"
-        ROUTER[API Router]
-        HEALTH[Health Routes]
-        USER[User Routes]
-        ACC[Account Routes]
-        CP[Counterpart Routes]
-        TXN[Transaction Routes]
-        RPT[Report Routes]
+        ROUTER["API Router"]
+        HEALTH["Health Routes"]
+        USER["User Routes"]
+        ACC["Account Routes"]
+        CP["Counterpart Routes"]
+        TXN["Transaction Routes"]
+        RPT["Report Routes"]
     end
 
     subgraph "Service Layer"
-        EXCEL[Excel Export Service]
-        VALID[Validation Services]
-        CALC[Calculation Services]
+        EXCEL["Excel Export Service"]
+        VALID["Validation Services"]
+        CALC["Calculation Services"]
     end
 
     subgraph "Data Layer"
-        MODELS[SQLAlchemy Models]
-        SCHEMAS[Pydantic Schemas]
-        SESSION[DB Session Manager]
-        ALEMBIC[Alembic Migrations]
+        MODELS["SQLAlchemy Models"]
+        SCHEMAS["Pydantic Schemas"]
+        SESSION["DB Session Manager"]
+        ALEMBIC["Alembic Migrations"]
     end
 
     subgraph "Infrastructure"
-        PG[(PostgreSQL)]
-        UVICORN[Uvicorn ASGI Server]
+        PG[("PostgreSQL")]
+        UVICORN["Uvicorn ASGI Server"]
     end
 
     CLIENT --> ROUTER
+
     ROUTER --> HEALTH
     ROUTER --> USER
     ROUTER --> ACC
