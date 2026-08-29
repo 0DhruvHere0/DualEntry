@@ -3,7 +3,7 @@
 
 ## Overview
 
-DualEntry is a production-ready financial accounting API that implements **double-entry bookkeeping** principles with full validation, reporting, and Excel export capabilities. Built with modern Python technologies, it provides a solid foundation for fintech applications, ERP systems, and accounting software.
+DualEntry is a backend financial accounting API that implements **double-entry bookkeeping** principles with transaction validation, financial reporting, and Excel export capabilities. Built with modern Python technologies, it provides a solid foundation for fintech applications, ERP systems, and accounting software.
 
 ### Key Highlights
 
@@ -19,68 +19,64 @@ DualEntry is a production-ready financial accounting API that implements **doubl
 
 ---
 
+## Tech Stack
+
+| Technology | Purpose |
+|------------|---------|
+| Python | Backend language |
+| FastAPI | REST API framework |
+| Pydantic | Request/response validation |
+| SQLAlchemy | ORM and database interaction |
+| PostgreSQL | Relational database |
+| Alembic | Database migrations |
+| Uvicorn | ASGI server |
+| OpenPyXL | Excel report generation |
+| Pytest | Automated testing |
+
+---
+
 ## Architecture
 
 ```mermaid
 graph TB
-    subgraph "Client Layer"
-        CLIENT["API Client<br/>Swagger UI / Postman / cURL"]
-    end
-
-    subgraph "API Layer"
-        ROUTER["API Router"]
-        HEALTH["Health Routes"]
-        USER["User Routes"]
-        ACC["Account Routes"]
-        CP["Counterpart Routes"]
-        TXN["Transaction Routes"]
-        RPT["Report Routes"]
-    end
-
-    subgraph "Service Layer"
-        EXCEL["Excel Export Service"]
-        VALID["Validation Services"]
-        CALC["Calculation Services"]
-    end
-
-    subgraph "Data Layer"
-        MODELS["SQLAlchemy Models"]
-        SCHEMAS["Pydantic Schemas"]
-        SESSION["DB Session Manager"]
-        ALEMBIC["Alembic Migrations"]
-    end
-
-    subgraph "Infrastructure"
-        PG[("PostgreSQL")]
-        UVICORN["Uvicorn ASGI Server"]
-    end
+    CLIENT["API Client<br/>Swagger UI / Postman / cURL"]
+    ROUTER["FastAPI Router"]
+    HEALTH["Health Routes"]
+    USER["User Routes"]
+    ACC["Account Routes"]
+    CP["Counterpart Routes"]
+    TXN["Transaction Routes"]
+    RPT["Report Routes"]
+    EXCEL["Excel Export Service"]
+    SCHEMAS["Pydantic Schemas"]
+    MODELS["SQLAlchemy Models"]
+    SESSION["Database Session"]
+    ALEMBIC["Alembic Migrations"]
+    PG[("PostgreSQL")]
+    UVICORN["Uvicorn"]
 
     CLIENT --> ROUTER
-
     ROUTER --> HEALTH
     ROUTER --> USER
     ROUTER --> ACC
     ROUTER --> CP
     ROUTER --> TXN
     ROUTER --> RPT
-
-    USER --> VALID
-    ACC --> VALID
-    CP --> VALID
-    TXN --> VALID
-    TXN --> CALC
-    RPT --> CALC
     RPT --> EXCEL
-
-    VALID --> MODELS
-    CALC --> MODELS
-    EXCEL --> MODELS
-
+    HEALTH --> SCHEMAS
+    USER --> SCHEMAS
+    ACC --> SCHEMAS
+    CP --> SCHEMAS
+    TXN --> SCHEMAS
+    RPT --> SCHEMAS
+    USER --> MODELS
+    ACC --> MODELS
+    CP --> MODELS
+    TXN --> MODELS
+    RPT --> MODELS
     MODELS --> SESSION
-    SCHEMAS --> MODELS
     SESSION --> PG
     ALEMBIC --> PG
-
     UVICORN --> ROUTER
 ```
 
@@ -93,7 +89,7 @@ graph TB
 - **Python** 3.11+
 - **PostgreSQL** 15+
 
-### Option 1: Local Development
+### Local Development
 
 ```bash
 # 1. Clone the repository
@@ -125,56 +121,6 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 ---
 
-## Installation
-
-### Requirements
-
-```text
-# Core
-fastapi>=0.109.0
-uvicorn[standard]>=0.27.0
-sqlalchemy>=2.0.0
-asyncpg>=0.29.0
-pydantic>=2.5.0
-pydantic-settings>=2.1.0
-alembic>=1.13.0
-python-dotenv>=1.0.0
-
-# Reports
-openpyxl>=3.1.0
-
-# Development
-pytest>=7.4.0
-pytest-asyncio>=0.23.0
-httpx>=0.26.0
-ruff>=0.1.0
-```
-
-### Environment Configuration
-
-Create a `.env` file in the project root:
-
-```env
-# Application
-APP_NAME=DualEntry
-APP_ENV=development
-DEBUG=true
-API_HOST=0.0.0.0
-API_PORT=8000
-
-# Database
-DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/dualentry
-DB_POOL_SIZE=10
-DB_MAX_OVERFLOW=20
-
-# Security (for future auth)
-SECRET_KEY=your-secret-key-here
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-```
-
----
-
 ## Transaction Flow
 
 ```mermaid
@@ -190,8 +136,8 @@ flowchart TD
     VALIDATE_ACCOUNTS -->|Yes| VALIDATE_ENTRIES{Entries Valid?}
     
     VALIDATE_ENTRIES -->|Missing DEBIT/CREDIT| ERROR_ENTRY[400 Entry Error]
-    VALIDATE_ENTRIES -->|Amounts ≤ 0| ERROR_AMT[400 Amount Error]
-    VALIDATE_ENTRIES -->|Debits ≠ Credits| ERROR_BALANCE[400 Unbalanced]
+    VALIDATE_ENTRIES -->|Amounts <= 0| ERROR_AMT[400 Amount Error]
+    VALIDATE_ENTRIES -->|Debits != Credits| ERROR_BALANCE[400 Unbalanced]
     
     VALIDATE_ENTRIES -->|All Valid| CHECK_TYPE{Type-Specific Rules?}
     
@@ -201,8 +147,7 @@ flowchart TD
     
     CHECK_TYPE -->|Other Types| PERSIST
     
-    PERSIST[Save Transaction & Entries] --> UPDATE_BALANCES[Update Account Balances]
-    UPDATE_BALANCES --> SUCCESS[201 Created + Transaction ID]
+    PERSIST[Save Transaction & Entries] --> SUCCESS[201 Created + Transaction ID]
     
     ERROR_USER --> END([Error Response])
     ERROR_CP --> END
@@ -281,7 +226,7 @@ graph TD
 ## API Endpoints
 
 <details>
-<summary><strong>📋 Click to expand all endpoints</strong></summary>
+<summary><strong>Click to expand all endpoints</strong></summary>
 
 ### Health
 | Method | Endpoint | Description |
@@ -323,6 +268,462 @@ graph TD
 | `GET` | `/reports/balance-sheet/{user_id}` | Balance sheet |
 | `GET` | `/reports/export/{user_id}` | **Excel export** (all reports) |
 
+</details>
+
+---
+
+## API Testing
+
+All API endpoints were manually tested through the Swagger UI available at `/docs`.
+
+### Testing Summary
+
+| Area | Tested |
+|------|--------|
+| Health endpoint | ✅ |
+| User creation & retrieval | ✅ |
+| Account creation & ownership | ✅ |
+| Duplicate account names | ✅ |
+| Counterpart relationships | ✅ |
+| Transaction validation | ✅ |
+| Double-entry balancing | ✅ |
+| Account category validation | ✅ |
+| Account ledger | ✅ |
+| Trial balance | ✅ |
+| Income statement | ✅ |
+| Balance sheet | ✅ |
+| Excel export | ✅ |
+| Error handling | ✅ |
+
+<details>
+<summary><strong>Health API</strong></summary>
+
+### GET /health
+**Response**
+```json
+{
+  "project": "DualEntry",
+  "version": "1.0.0",
+  "status": "Running"
+}
+```
+</details>
+
+<details>
+<summary><strong>User API</strong></summary>
+
+### POST /users/
+**Request**
+```json
+{
+  "name": "Validation User"
+}
+```
+**Response (201)**
+```json
+{
+  "id": 1,
+  "name": "Validation User"
+}
+```
+
+### GET /users/{user_id}
+**Response (200)**
+```json
+{
+  "id": 1,
+  "name": "Validation User"
+}
+```
+
+### Invalid User
+**Response (404)**
+```json
+{
+  "detail": "User not found"
+}
+```
+</details>
+
+<details>
+<summary><strong>Account API</strong></summary>
+
+### POST /accounts/
+**Request**
+```json
+{
+  "user_id": 1,
+  "name": "Cash",
+  "category": "ASSET"
+}
+```
+**Response (201)**
+```json
+{
+  "id": 1,
+  "user_id": 1,
+  "name": "Cash",
+  "category": "ASSET"
+}
+```
+
+### Duplicate Account Names
+Multiple accounts with the same name are allowed for the same user.
+
+**Response (201) - Second Cash account**
+```json
+{
+  "id": 2,
+  "user_id": 1,
+  "name": "Cash",
+  "category": "ASSET"
+}
+```
+
+### GET /accounts/{account_id}/balance
+**Response (200)**
+```json
+{
+  "account_id": 1,
+  "balance": "1500.00"
+}
+```
+</details>
+
+<details>
+<summary><strong>Counterpart API</strong></summary>
+
+### POST /counterparts/
+**Request**
+```json
+{
+  "user_id": 1,
+  "counterpart_user_id": 2,
+  "relationship_type": "CUSTOMER"
+}
+```
+**Response (201)**
+```json
+{
+  "id": 1,
+  "user_id": 1,
+  "counterpart_user_id": 2,
+  "relationship_type": "CUSTOMER"
+}
+```
+
+### GET /counterparts/user/{user_id}
+**Response (200)**
+```json
+[
+  {
+    "id": 1,
+    "user_id": 1,
+    "counterpart_user_id": 2,
+    "relationship_type": "CUSTOMER"
+  }
+]
+```
+</details>
+
+<details>
+<summary><strong>Transaction API</strong></summary>
+
+### POST /transactions/ - Valid SALE
+**Request**
+```json
+{
+  "user_id": 1,
+  "counterpart_id": 1,
+  "transaction_type": "SALE",
+  "description": "Cash sale",
+  "entries": [
+    {"account_id": 1, "entry_type": "DEBIT", "amount": 2000},
+    {"account_id": 3, "entry_type": "CREDIT", "amount": 2000}
+  ]
+}
+```
+**Response (201)**
+```json
+{
+  "id": 1,
+  "user_id": 1,
+  "counterpart_id": 1,
+  "transaction_type": "SALE",
+  "description": "Cash sale",
+  "created_at": "2026-01-15T10:30:00Z",
+  "entries": [
+    {"id": 1, "account_id": 1, "entry_type": "DEBIT", "amount": "2000.00"},
+    {"id": 2, "account_id": 3, "entry_type": "CREDIT", "amount": "2000.00"}
+  ]
+}
+```
+</details>
+
+<details>
+<summary><strong>Reporting API</strong></summary>
+
+### GET /reports/trial-balance/{user_id}
+**Response (200)**
+```json
+{
+  "user_id": 1,
+  "entries": [
+    {"account_id": 1, "account_name": "Cash", "category": "ASSET", "debit_total": "2000.00", "credit_total": "0.00"},
+    {"account_id": 3, "account_name": "Sales Income", "category": "INCOME", "debit_total": "0.00", "credit_total": "2000.00"}
+  ],
+  "total_debits": "2000.00",
+  "total_credits": "2000.00",
+  "is_balanced": true
+}
+```
+
+### GET /reports/account-ledger/{account_id}
+**Response (200)**
+```json
+{
+  "account_id": 1,
+  "account_name": "Cash",
+  "category": "ASSET",
+  "entries": [
+    {"transaction_id": 1, "entry_type": "DEBIT", "amount": "2000.00", "running_balance": "2000.00", "created_at": "2026-01-15T10:30:00Z"}
+  ]
+}
+```
+
+### GET /reports/income-statement/{user_id}
+**Response (200)**
+```json
+{
+  "user_id": 1,
+  "income": "2000.00",
+  "expenses": "0.00",
+  "net_income": "2000.00"
+}
+```
+
+### GET /reports/balance-sheet/{user_id}
+**Response (200)**
+```json
+{
+  "user_id": 1,
+  "assets": "2000.00",
+  "liabilities": "0.00",
+  "equity": "2000.00",
+  "is_balanced": true
+}
+```
+</details>
+
+<details>
+<summary><strong>Excel Export</strong></summary>
+
+### GET /reports/export/{user_id}
+**Response:** Downloads `financial_report.xlsx` containing:
+- Trial Balance
+- Account Ledgers
+- Income Statement
+- Balance Sheet
+</details>
+
+---
+
+## Transaction Validation Examples
+
+These validation tests demonstrate the business rules enforced by the API.
+
+<details>
+<summary><strong>Double-Entry Validation</strong></summary>
+
+**Unbalanced Transaction**
+```json
+{
+  "user_id": 1,
+  "counterpart_id": 1,
+  "transaction_type": "SALE",
+  "entries": [
+    {"account_id": 1, "entry_type": "DEBIT", "amount": 1000},
+    {"account_id": 3, "entry_type": "CREDIT", "amount": 500}
+  ]
+}
+```
+**Response (400)**
+```json
+{
+  "detail": "Total debits must equal total credits"
+}
+```
+
+**Balanced Transaction**
+```json
+{
+  "user_id": 1,
+  "counterpart_id": 1,
+  "transaction_type": "SALE",
+  "entries": [
+    {"account_id": 1, "entry_type": "DEBIT", "amount": 1000},
+    {"account_id": 3, "entry_type": "CREDIT", "amount": 1000}
+  ]
+}
+```
+**Response (201)** - Transaction Created
+</details>
+
+<details>
+<summary><strong>Account Ownership Validation</strong></summary>
+
+**User 3 attempting to use Account 19 (belongs to User 4)**
+```json
+{
+  "user_id": 3,
+  "counterpart_id": 1,
+  "transaction_type": "SALE",
+  "entries": [
+    {"account_id": 19, "entry_type": "DEBIT", "amount": 1000},
+    {"account_id": 3, "entry_type": "CREDIT", "amount": 1000}
+  ]
+}
+```
+**Response (403)**
+```json
+{
+  "detail": "Account 19 does not belong to this user"
+}
+```
+</details>
+
+<details>
+<summary><strong>Transaction Category Validation</strong></summary>
+
+### SALE - Credit must be Income account
+**Invalid: Credit to Asset**
+```json
+{
+  "transaction_type": "SALE",
+  "entries": [
+    {"account_id": 1, "entry_type": "DEBIT", "amount": 1000},  // Asset
+    {"account_id": 2, "entry_type": "CREDIT", "amount": 1000}  // Asset (wrong)
+  ]
+}
+```
+**Response (400)**
+```json
+{
+  "detail": "SALE credit entry must use an Income account"
+}
+```
+
+**Valid: Credit to Income**
+```json
+{
+  "transaction_type": "SALE",
+  "entries": [
+    {"account_id": 1, "entry_type": "DEBIT", "amount": 1000},   // Asset
+    {"account_id": 3, "entry_type": "CREDIT", "amount": 1000}   // Income
+  ]
+}
+```
+**Response (201)** - Transaction Created
+
+---
+
+### PURCHASE - Debit: Asset/Expense, Credit: Asset/Liability
+**Invalid: Credit to Income**
+```json
+{
+  "transaction_type": "PURCHASE",
+  "entries": [
+    {"account_id": 4, "entry_type": "DEBIT", "amount": 1000},   // Expense
+    {"account_id": 3, "entry_type": "CREDIT", "amount": 1000}   // Income (wrong)
+  ]
+}
+```
+**Response (400)**
+```json
+{
+  "detail": "PURCHASE credit entry must use an Asset or Liability account"
+}
+```
+
+**Valid: Credit to Liability**
+```json
+{
+  "transaction_type": "PURCHASE",
+  "entries": [
+    {"account_id": 4, "entry_type": "DEBIT", "amount": 1000},   // Expense
+    {"account_id": 5, "entry_type": "CREDIT", "amount": 1000}   // Liability
+  ]
+}
+```
+**Response (201)** - Transaction Created
+
+---
+
+### EXPENSE - Debit: Expense, Credit: Asset/Liability
+**Invalid: Debit to Asset**
+```json
+{
+  "transaction_type": "EXPENSE",
+  "entries": [
+    {"account_id": 1, "entry_type": "DEBIT", "amount": 1000},   // Asset (wrong)
+    {"account_id": 5, "entry_type": "CREDIT", "amount": 1000}   // Liability
+  ]
+}
+```
+**Response (400)**
+```json
+{
+  "detail": "EXPENSE debit entry must use an Expense account"
+}
+```
+
+**Valid: Debit to Expense**
+```json
+{
+  "transaction_type": "EXPENSE",
+  "entries": [
+    {"account_id": 4, "entry_type": "DEBIT", "amount": 1000},   // Expense
+    {"account_id": 5, "entry_type": "CREDIT", "amount": 1000}   // Liability
+  ]
+}
+```
+**Response (201)** - Transaction Created
+</details>
+
+<details>
+<summary><strong>Counterpart Relationship Validation</strong></summary>
+
+**Transaction without counterpart relationship**
+```json
+{
+  "user_id": 1,
+  "counterpart_id": 999,  // No relationship exists
+  "transaction_type": "SALE",
+  "entries": [...]
+}
+```
+**Response (400)**
+```json
+{
+  "detail": "Counterpart relationship does not exist"
+}
+```
+
+**Counterpart cannot be same as user**
+```json
+{
+  "user_id": 1,
+  "counterpart_id": 1,  // Same as user_id
+  "transaction_type": "SALE",
+  "entries": [...]
+}
+```
+**Response (400)**
+```json
+{
+  "detail": "Counterpart cannot be the same as the transaction user"
+}
+```
 </details>
 
 ---
@@ -444,10 +845,12 @@ DualEntry/
 │   └── main.py
 ├── alembic/
 │   ├── versions/
-│   └── env.py
+│   │   └── env.py
 ├── tests/
 ├── .env.example
 ├── .gitignore
 ├── requirements.txt
 └── README.md
 ```
+
+---
