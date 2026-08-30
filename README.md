@@ -86,14 +86,14 @@ graph TB
 
 ### Prerequisites
 
-- **Python** 3.11+
+- **Python** 3.11 or newer
 - **PostgreSQL** 15+
 
 ### Local Development
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/yourusername/DualEntry.git
+git clone https://github.com/0DhruvHere0/DualEntry
 cd DualEntry
 
 # 2. Create and activate virtual environment
@@ -144,10 +144,21 @@ flowchart TD
     CHECK_TYPE -->|SALE/PURCHASE/EXPENSE/INCOME| VALIDATE_CATEGORY{Category Rules Match?}
     VALIDATE_CATEGORY -->|No| ERROR_CAT[400 Category Mismatch]
     VALIDATE_CATEGORY -->|Yes| PERSIST
+
+    CHECK_TYPE -->|LOAN_RECEIVED| VALIDATE_LENDER{LENDER relationship?}
+    CHECK_TYPE -->|LOAN_GIVEN| VALIDATE_BORROWER{BORROWER relationship?}
+    CHECK_TYPE -->|LOAN_REPAYMENT| VALIDATE_REPAYMENT{BORROWER + Loan Balance?}
+
+    VALIDATE_LENDER -->|No| ERROR_REL[400 Relationship Error]
+    VALIDATE_LENDER -->|Yes| PERSIST
+
+    VALIDATE_BORROWER -->|No| ERROR_REL
+    VALIDATE_BORROWER -->|Yes| PERSIST
+
+    VALIDATE_REPAYMENT -->|No| ERROR_LOAN[400 Loan Validation Error]
+    VALIDATE_REPAYMENT -->|Yes| PERSIST
     
-    CHECK_TYPE -->|Other Types| PERSIST
-    
-    PERSIST[Save Transaction & Entries] --> SUCCESS[201 Created + Transaction ID]
+    PERSIST[Save Transaction & Entries] --> SUCCESS[200 OK + Transaction ID]
     
     ERROR_USER --> END([Error Response])
     ERROR_CP --> END
@@ -274,7 +285,66 @@ graph TD
 
 ## API Testing
 
-All API endpoints were manually tested through the Swagger UI available at `/docs`.
+DualEntry includes an automated API test suite built with **Pytest** and FastAPI's `TestClient`.
+
+The test suite covers the core business logic, validation rules, account calculations, counterpart relationships, transaction processing, and financial reporting behavior.
+
+### Automated Testing Summary
+
+**40 tests passed successfully.**
+
+```text
+40 passed, 0 failed
+```
+
+| Area | Coverage |
+|------|----------|
+| Health endpoint | ✅ |
+| User creation & retrieval | ✅ |
+| Duplicate users | ✅ |
+| Account creation & ownership | ✅ |
+| Account balances | ✅ |
+| Account ledger | ✅ |
+| Trial balance | ✅ |
+| Counterpart relationships | ✅ |
+| Counterpart filtering | ✅ |
+| Transaction creation | ✅ |
+| Double-entry balancing | ✅ |
+| Missing debit/credit validation | ✅ |
+| Account ownership validation | ✅ |
+| Transaction category validation | ✅ |
+| Loan received validation | ✅ |
+| Loan given validation | ✅ |
+| Loan repayment validation | ✅ |
+| Loan balance calculations | ✅ |
+| Partial loan repayment | ✅ |
+| Outstanding loan protection | ✅ |
+| Multiple transaction balance consistency | ✅ |
+| Error handling | ✅ |
+
+### Run Tests
+
+From the project root:
+
+```bash
+python -m pytest -v
+```
+
+Example successful test run:
+
+```text
+=======================================================
+40 passed, 0 failed
+=======================================================
+```
+
+The automated tests use an isolated test database through the test configuration in `tests/conftest.py`, ensuring that test execution does not depend on production data.
+
+
+
+### Manual API Verification
+
+Additional API functionality, including financial reports and Excel export, was manually verified through Swagger UI.
 
 ### Testing Summary
 
@@ -295,8 +365,10 @@ All API endpoints were manually tested through the Swagger UI available at `/doc
 | Excel export | ✅ |
 | Error handling | ✅ |
 
+The test suite focuses primarily on business-critical behavior such as double-entry balancing, account ownership, transaction category rules, counterpart relationships, loan validation, account balances, and financial consistency.
 <details>
 <summary><strong>Health API</strong></summary>
+
 
 ### GET /health
 **Response**
@@ -319,7 +391,7 @@ All API endpoints were manually tested through the Swagger UI available at `/doc
   "name": "Validation User"
 }
 ```
-**Response (201)**
+**Response (200)**
 ```json
 {
   "id": 1,
@@ -357,7 +429,7 @@ All API endpoints were manually tested through the Swagger UI available at `/doc
   "category": "ASSET"
 }
 ```
-**Response (201)**
+**Response (200)**
 ```json
 {
   "id": 1,
@@ -398,7 +470,7 @@ Multiple accounts with the same name are allowed for the same user.
 ```json
 {
   "user_id": 1,
-  "counterpart_user_id": 2,
+  "counterpart_id": 2,
   "relationship_type": "CUSTOMER"
 }
 ```
@@ -566,7 +638,7 @@ These validation tests demonstrate the business rules enforced by the API.
   ]
 }
 ```
-**Response (201)** - Transaction Created
+**Response (200)** - Transaction Created
 </details>
 
 <details>
@@ -594,6 +666,35 @@ These validation tests demonstrate the business rules enforced by the API.
 
 <details>
 <summary><strong>Transaction Category Validation</strong></summary>
+
+### Loan Transaction Validation
+
+Loan transactions enforce counterpart relationships and loan-balance rules.
+
+| Transaction Type | Required Relationship | Purpose |
+|------------------|----------------------|---------|
+| `LOAN_RECEIVED` | `LENDER` | Records money received from a lender |
+| `LOAN_GIVEN` | `BORROWER` | Records money lent to a borrower |
+| `LOAN_REPAYMENT` | `BORROWER` | Records repayment of an outstanding loan |
+
+#### Loan Received
+
+A `LOAN_RECEIVED` transaction requires the counterpart to have a `LENDER` relationship.
+
+#### Loan Given
+
+A `LOAN_GIVEN` transaction requires the counterpart to have a `BORROWER` relationship.
+
+#### Loan Repayment
+
+A `LOAN_REPAYMENT` transaction requires:
+
+- A `BORROWER` counterpart relationship
+- A valid loan receivable account
+- The repayment amount must not exceed the outstanding loan balance
+- The transaction must remain balanced under double-entry rules
+
+The API therefore prevents repayments from exceeding the amount currently owed.
 
 ### SALE - Credit must be Income account
 **Invalid: Credit to Asset**
@@ -791,21 +892,21 @@ Shows individual entries with **running balance** per account.
 
 ### Income Statement
 ```
-Revenue (Income)     150,000
+Revenue (Income)      150,000
 Cost of Goods Sold   -45,000
 Gross Profit          105,000
 Operating Expenses   -30,000
-Net Income             75,000
+Net Income            75,000
 ```
 
 ### Balance Sheet
 ```
 ASSETS                          LIABILITIES & EQUITY
-Cash              100,000       Accounts Payable    25,000
+Cash                 100,000    Accounts Payable    25,000
 Accounts Receivable  50,000     Loans Payable       50,000
-Inventory              30,000     Equity             105,000
+Inventory            30,000     Equity              105,000
 ─────────────────────           ─────────────────────
-Total Assets        180,000     Total L&E           180,000
+Total Assets         180,000    Total L&E           180,000
 ```
 
 ---
@@ -847,6 +948,12 @@ DualEntry/
 │   ├── versions/
 │   │   └── env.py
 ├── tests/
+│   ├── conftest.py
+│   ├── test_accounts.py
+│   ├── test_counterparts.py
+│   ├── test_health.py
+│   ├── test_transactions.py
+│   └── test_users.py
 ├── .env.example
 ├── .gitignore
 ├── requirements.txt
