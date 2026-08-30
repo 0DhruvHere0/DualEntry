@@ -10,6 +10,3 @@ __pycache__/
 .coverage
 htmlcov/
 *.db
-.env.example
-LICENSE
-__init__.py

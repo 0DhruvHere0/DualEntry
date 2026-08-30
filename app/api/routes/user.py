@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from app.database.dependency import get_db
 from app.models.user import User
@@ -10,6 +11,7 @@ router = APIRouter(
 @router.post(
     "/",
     response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
 )
 def create_user(
     user: UserCreate,
@@ -19,6 +21,13 @@ def create_user(
         name=user.name,
     )
     db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    try:
+        db.commit()
+        db.refresh(new_user)
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="User with this name already exists",
+        )
     return new_user

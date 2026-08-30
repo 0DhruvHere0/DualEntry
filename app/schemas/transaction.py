@@ -40,3 +40,4 @@ class TransactionResponse(BaseModel):
     created_at: datetime
     entries: list[EntryResponse]
     model_config = ConfigDict(from_attributes=True)
+    counterpart_id: int

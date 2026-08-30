@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, func, case
 from sqlalchemy.orm import Session
+from decimal import Decimal
 from app.database.dependency import get_db
 from app.models.transaction import Transaction
 from app.models.entry import Entry
@@ -79,6 +80,15 @@ def create_transaction(
                     "relationship to be BORROWER"
                 )
             )
+    if transaction_data.transaction_type == TransactionType.LOAN_REPAYMENT:
+        if counterpart_relationship.relationship_type != "BORROWER":
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "LOAN_REPAYMENT requires counterpart "
+                    "relationship to be BORROWER"
+                )
+            )
     accounts = {}
     for entry_data in transaction_data.entries:
         account = db.scalar(
@@ -122,6 +132,61 @@ def create_transaction(
             status_code=400,
             detail="Transaction must contain both debit and credit entries"
         )
+    if debit_total != credit_total:
+        raise HTTPException(
+            status_code=400,
+            detail="Total debits must equal total credits"
+        )
+    if transaction_data.transaction_type == TransactionType.LOAN_REPAYMENT:
+        loan_repayment_amount = sum(
+            entry.amount
+            for entry in transaction_data.entries
+            if (
+                entry.entry_type == EntryType.CREDIT
+                and accounts[entry.account_id].name == "Loan Receivable"
+            )
+        )
+        loan_receivable_account = next(
+            (
+                account
+                for account in accounts.values()
+                if (
+                    account.name == "Loan Receivable"
+                    and account.category == "Asset"
+                )
+            ),
+            None
+        )
+        if loan_receivable_account is not None:
+            outstanding_loan = db.scalar(
+                select(
+                    func.coalesce(
+                        func.sum(
+                            case(
+                                (
+                                    Entry.entry_type == "DEBIT",
+                                    Entry.amount
+                                ),
+                                (
+                                    Entry.entry_type == "CREDIT",
+                                    -Entry.amount
+                                ),
+                            )
+                        ),
+                        0
+                    )
+                )
+                .where(
+                    Entry.account_id == loan_receivable_account.id
+                )
+            )
+            outstanding_loan = Decimal(outstanding_loan or 0)
+            if outstanding_loan > 0:
+                if loan_repayment_amount > outstanding_loan:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Loan repayment exceeds outstanding loan balance"
+                    )
     if debit_total != credit_total:
         raise HTTPException(
             status_code=400,
@@ -188,6 +253,48 @@ def create_transaction(
                         detail=(
                             "EXPENSE credit entry must use "
                             "an Asset or Liability account"
+                        )
+                    )
+    if transaction_data.transaction_type == TransactionType.LOAN_RECEIVED:
+        for entry_data in transaction_data.entries:
+            account = accounts[entry_data.account_id]
+            if entry_data.entry_type == EntryType.DEBIT:
+                if account.category != "Asset":
+                    raise HTTPException(
+                        status_code=400,
+                        detail=(
+                            "LOAN_RECEIVED debit entry must use "
+                            "an Asset account"
+                        )
+                    )
+            elif entry_data.entry_type == EntryType.CREDIT:
+                if account.category != "Liability":
+                    raise HTTPException(
+                        status_code=400,
+                        detail=(
+                            "LOAN_RECEIVED credit entry must use "
+                            "a Liability account"
+                        )
+                    )
+    if transaction_data.transaction_type == TransactionType.LOAN_GIVEN:
+        for entry_data in transaction_data.entries:
+            account = accounts[entry_data.account_id]
+            if entry_data.entry_type == EntryType.DEBIT:
+                if account.category != "Asset":
+                    raise HTTPException(
+                        status_code=400,
+                        detail=(
+                            "LOAN_GIVEN debit entry must use "
+                            "an Asset account"
+                        )
+                    )
+            elif entry_data.entry_type == EntryType.CREDIT:
+                if account.category != "Asset":
+                    raise HTTPException(
+                        status_code=400,
+                        detail=(
+                            "LOAN_GIVEN credit entry must use "
+                            "an Asset account"
                         )
                     )
     if transaction_data.transaction_type == TransactionType.INCOME:
